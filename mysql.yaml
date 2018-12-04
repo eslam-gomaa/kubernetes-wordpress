@@ -1,25 +1,26 @@
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: mysql-pv
+  name: pv-mysql
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
-    storage: 10Gi
-  hostPath:
-    path: /tmp/wp/
+    storage: 20Gi
+  nfs:
+    path: /mnt/kube/mysql
+    server: 192.168.100.80
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: mysql-pvc
+  name: pvc-mysql
 spec:
-  accessModes:
-    - ReadWriteMany
   resources:
     requests:
-      storage: 10Gi
+      storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -29,7 +30,7 @@ metadata:
     tier: mysql
   name: mysql
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: wp
@@ -41,20 +42,20 @@ spec:
         tier: mysql
     spec:
       volumes:
-        - name: mysql-v
+        - name: mysql-vol
           persistentVolumeClaim:
-            claimName: mysql-pvc
+            claimName: pvc-mysql
       containers:
-      - image: mysql:5.7
+      - image: mysql:5.6
         name: mysql
         volumeMounts:
-          - name: mysql-v
+          - name: mysql-vol
             mountPath: /var/lib/mysql
         ports:
           - containerPort: 3306 
         env:
           - name: MYSQL_ROOT_PASSWORD
-            value: FORTESTING
+            value: password
 ---
 kind: Service
 apiVersion: v1

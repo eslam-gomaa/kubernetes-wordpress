@@ -1,3 +1,27 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: pv-wordpress
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 20Gi
+  nfs:
+    path: /mnt/kube/wordpress
+    server: 192.168.100.80
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-wordpress
+spec:
+  resources:
+    requests:
+      storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,7 +30,7 @@ metadata:
     tier: wordpress
   name: wordpress
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: wp
@@ -17,16 +41,23 @@ spec:
         app: wp
         tier: wordpress
     spec:
+      volumes:
+        - name: wordpress-vol
+          persistentVolumeClaim:
+            claimName: pvc-wordpress
       containers:
       - image: wordpress
         name: wordpress
+        volumeMounts:
+          - name: wordpress-vol
+            mountPath: /var/www/html
         ports:
           - containerPort: 80
         env:
           - name: WORDPRESS_DB_HOST
             value: wp-mysql
           - name: WORDPRESS_DB_PASSWORD
-            value: FORTESTING 
+            value: password
 ---
 kind: Service
 apiVersion: v1
@@ -42,6 +73,3 @@ spec:
   ports:
     - port: 80
       nodePort: 31776
-
-
-
