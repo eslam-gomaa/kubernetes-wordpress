@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: wp
+    tier: wordpress
+  name: wordpress
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wp
+      tier: wordpress
+  template:
+    metadata:
+      labels:
+        app: wp
+        tier: wordpress
+    spec:
+      containers:
+      - image: wordpress
+        name: wordpress
+        ports:
+          - containerPort: 80
+        env:
+          - name: WORDPRESS_DB_HOST
+            value: wp-mysql
+          - name: WORDPRESS_DB_PASSWORD
+            value: FORTESTING 
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: wp-wordpress
+  labels:
+    app: wp
+spec:
+  selector:
+    app: wp
+    tier: wordpress
+  type: NodePort
+  ports:
+    - port: 80
+      nodePort: 31776
+
+
+

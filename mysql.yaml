@@ -1,0 +1,71 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: mysql-pv
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 10Gi
+  hostPath:
+    path: /tmp/wp/
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: wp
+    tier: mysql
+  name: mysql
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wp
+      tier: mysql
+  template:
+    metadata:
+      labels:
+        app: wp
+        tier: mysql
+    spec:
+      volumes:
+        - name: mysql-v
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+      containers:
+      - image: mysql:5.7
+        name: mysql
+        volumeMounts:
+          - name: mysql-v
+            mountPath: /var/lib/mysql
+        ports:
+          - containerPort: 3306 
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: FORTESTING
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: wp-mysql
+  labels:
+    app: wp
+spec:
+  selector:
+    app: wp
+    tier: mysql
+  type: ClusterIP
+  ports:
+    - port: 3306
